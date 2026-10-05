@@ -1,314 +1,1057 @@
 # PhysioHome / PhysioGhar End-to-End Manual QA Report
 
-**Test date:** 2026-10-04  
-**Website:** https://physiohome.tech/  
-**Mobile device:** realme RMX2161, Android 12  
-**Android package:** `com.sahayatri.sahayatri_care_connect`  
-**Documentation:** Markdown report with linked screenshots under `test-evidence/physiohome/`
+**Test date:** 2026-10-04
 
-## Executive Summary
+**Website:** https://physiohome.tech/
 
-This pass exercised the public website, patient/therapist/admin web workspaces, and patient/therapist Android app workflows using the supplied demo accounts. It covered discovery, booking through payment review, patient account/support/health views, therapist schedule/requests, admin management pages, and selected form validation. It is broad manual coverage, not exhaustive testing of every combination, device size, API response, or payment-provider transaction.
+**Mobile device:** realme RMX2161, Android 12
 
-The most serious findings are incorrect financial state after a cash-on-visit booking (the app immediately reports payment received), and a patient complaint being stored under a different patient's identity. Additional issues include inconsistent patient session/progress counts, therapist lists that classify July appointments as upcoming in October, conflicting platform-fee configuration and checkout totals, an unclear mobile address requirement, and unfinished upload/wallet/care-progress features.
+**Android package:** `com.sahayatri.sahayatri_care_connect`
 
-A QA cash-on-visit booking was created and canceled. No online payment was authorized. A clearly marked QA complaint was submitted; the admin queue stored it under the wrong patient, the finding was captured, and that QA complaint was then deleted. The canceled booking remains in the demo booking history as a cancellation, which is useful evidence of the lifecycle result.
+**Documentation:** Markdown report with screenshots linked from `test-evidence/physiohome/`
 
-## Test Scope
+---
 
-### Website
+## 1. Test Summary
 
-- Public home, services, clinics, packages, testimonials, about, contact, FAQ, blog, privacy, and terms pages.
-- Therapist discovery search, city filter, lowest-price sorting, therapist booking modal, date/slot availability, address, fee breakdown, and payment selection up to the gateway step.
-- Patient login and Overview, Sessions, Reports, Rewards, Notifications, Complaints, Profile, Help, and Settings routes.
-- Therapist login, Overview, report form, and account dashboard.
-- Admin login, Overview, therapists, patients, bookings, service areas, schedules, leave, payments, refunds, complaints, verification, performance, safety incidents, notifications, analytics, admin team, activity log, appearance, and settings pages.
+I tested the main user flows across the PhysioHome website and Android app using the provided demo accounts.
 
-### Android App
+The testing covered the public website, patient and therapist areas, admin dashboard, and the main patient/therapist flows in the mobile app. I also tested therapist search, booking, payment screens, complaints, patient sessions, notifications, reports, and several validation scenarios.
 
-- Install and launch on a physical Android 12 device.
-- Patient login; home, therapist discovery, sessions, notifications, account, profile, saved addresses, reports, recovery progress, payment methods, rewards, FAQ, and support.
-- Therapist login; home, schedule, booking requests, and account.
-- Patient booking through confirmation with cash-on-visit, then cancellation; no online payment was made.
+This was a broad manual QA pass. It was not intended to cover every possible device, browser, API response, payment transaction, or data combination.
 
-### Not Performed
+### Main issues found
 
-- No eSewa/Khalti transaction, refund, or real-money payment was initiated.
-- No therapist report or patient medical file was uploaded; mobile self-upload explicitly reports that it is unavailable.
-- Admin mobile testing is out of scope because the APK exposes patient and therapist roles only.
-- Destructive account deletion, admin settings changes, availability changes, patient/therapist profile edits, and unrelated test-data modifications were not performed.
+The main issues found during testing were:
 
-## Findings
+* A cash-on-visit booking was shown as **payment received even though no payment had been made**.
 
-### FIN-01: Cash-on-visit booking is immediately marked as paid
+* A complaint submitted by one patient was shown in the admin panel under another patient's name.
 
-**Priority:** P1 (High)  
-**Platform:** Android app / patient notifications and admin finance  
-**Area:** Booking, payment state, notifications
+* Patient session and progress counts did not match between different screens and between web and mobile.
 
-**Description:** After selecting **Cash on visit** and confirming a test booking, the app immediately created a “Payment received” notification stating that the Rs 1,700 cash payment was confirmed. No cash had been collected. The booking was subsequently canceled, but the false payment notice remained. After the test flow, the admin dashboard's platform-earnings card also changed from the earlier Rs 0 baseline to Rs 1,700 even though no payment was collected and the appointment was canceled.
+* The therapist's Upcoming list contained appointments from July even though the test was performed in October.
 
-**Steps to reproduce:**
-1. Sign in to the mobile app as `patient@test.com`.
-2. Select a therapist, a future date/time, and enter a valid address.
-3. Select **Cash on visit** and confirm the booking.
-4. Inspect Notifications and the admin Overview before any visit/payment takes place.
-5. Cancel the booking and inspect the payment notification again.
+* Platform fee information was different in admin, web checkout, and mobile.
 
-**Expected:** A cash-on-visit booking is recorded as unpaid/pending collection until the therapist records the actual cash receipt. Cancellation should not create payment-received or earned-fee records.
+* The mobile app gave a generic address validation message.
 
-**Actual:** A payment-received notice was generated immediately; admin earnings rose despite no funds being collected. The patient then received a cancellation notice as well.
+* Several mobile features such as file upload, pain tracking, milestones, and wallet linking are not available yet.
 
-**Evidence:** [Mobile booking confirmation](test-evidence/physiohome/mobile-qa-booking-confirmed.png) · [False cash-payment notification](test-evidence/physiohome/mobile-qa-payment-notification.png) · [Admin overview after QA booking](test-evidence/physiohome/web-admin-post-qa-booking.png)
+* A Nepali translation displayed an internal key instead of the actual translated text.
 
-### FIN-02: Platform fee differs between admin configuration, web checkout, and mobile
+* Some website links and form validations did not behave as expected.
 
-**Priority:** P1 (High)  
-**Platform:** Website, admin, Android app  
-**Area:** Pricing and payment transparency
+A QA cash-on-visit booking was created and later canceled. No online payment was made. I also submitted a complaint using a QA-only description to verify the complaint flow. After capturing the evidence, that complaint was deleted from the admin panel.
 
-**Description:** Admin Settings shows a configured platform fee of **15%**. Web checkout showed **5%** (for example, Rs 65 on a Rs 1,300 session; total Rs 1,365). The mobile checkout showed a Rs 1,700 session as the full amount and stated “No hidden charges,” with no platform fee. This creates three different fee representations.
+---
 
-**Steps to reproduce:**
-1. Sign in as admin and open Settings; inspect Platform fee.
-2. Start a patient web booking and advance to Payment; inspect the itemized fee.
-3. Start the equivalent flow in the mobile app and inspect the session summary.
+# 2. Test Scope
 
-**Expected:** The configured fee rate and total are consistent across clients and disclosed before a user confirms a booking.
+## 2.1 Website
 
-**Actual:** Admin setting says 15%; web checkout calculates 5%; mobile shows no additional fee.
+The following areas were checked:
 
-**Evidence:** [Mobile booking summary](test-evidence/physiohome/mobile-patient-booking-summary.png) · [Web payment step](test-evidence/physiohome/web-booking-payment-step.png). Admin Settings showed 15% during this pass; the setting was not changed.
+* Public home page
 
-### SEC-01: Submitted complaint is attributed to a different patient
+* Services
 
-**Priority:** P1 (High)  
-**Platform:** Website / patient complaint and admin queue  
-**Area:** Identity, privacy, trust and safety
+* Clinics
 
-**Description:** A complaint submitted while authenticated as `patient@test.com` (patient dashboard identifies the account as John Doe) appeared in the admin queue as filed by **Nabin Khadka**. The stored complaint body exactly matched the unique QA-only text entered in the John Doe session, confirming that this was the newly submitted record rather than an older fixture. The complaint was deleted after evidence capture.
+* Packages
 
-**Steps to reproduce:**
-1. Sign in to the website as `patient@test.com`.
-2. Open Complaints, select Dr. Anil Shakya and category Other, enter a unique test description, and submit.
-3. Sign in as admin and open Complaints > Filed by Patients.
-4. Open the newest complaint and compare the displayed owner with the authenticated patient.
+* Testimonials
 
-**Expected:** The complaint is stored against the authenticated patient's account and displayed to admins with the correct identity.
+* About
 
-**Actual:** The exact QA complaint appeared under Nabin Khadka, while the session was John Doe. This misroutes the complaint and corrupts the admin identity/audit record. Whether the other named patient can access the complaint was not tested.
+* Contact
 
-**Cleanup:** The QA complaint was permanently deleted through the admin interface after capturing its details. Other complaints were not changed.
+* FAQ
 
-**Evidence:** [Admin complaint queue](test-evidence/physiohome/web-admin-complaints-qa.png) · [Admin complaint detail](test-evidence/physiohome/web-admin-qa-complaint-detail.png)
+* Blog
 
-### DATA-01: Patient session totals and progress disagree between screens and web/mobile
+* Privacy
 
-**Priority:** P1 (High)  
-**Platform:** Android app and website / patient  
-**Area:** Care history and progress
+* Terms
 
-**Description:** The mobile Account card showed 20 completed sessions; mobile Sessions showed Past (20) and included rows still labeled CONFIRMED. Mobile Recovery Progress displayed 10/36 sessions and 9 upcoming, while mobile home and Sessions showed no upcoming bookings. On the web, the patient Overview showed 37 total and 10 completed after the QA booking was created and canceled; the Completed list had 10 records. Even allowing for the extra canceled QA record, the mobile and web progress/status groupings do not reconcile.
+* Therapist search
 
-**Steps to reproduce:**
-1. Sign in as the same patient in mobile and web.
-2. Compare Account, Sessions, Recovery Progress, and web Overview/Completed.
-3. Inspect status labels on past/cancelled session rows.
+* City filter
 
-**Expected:** Aggregates and status labels are derived consistently from the same bookings and update predictably across clients.
+* Lowest-price sorting
 
-**Actual:** Conflicting counts, including 0 versus 9 upcoming and 20 versus 10 completed; some past rows remain labeled CONFIRMED. A cancelled address also contained the malformed text `Kathmandu dhdhdnnd`.
+* Therapist booking
 
-**Evidence:** [Patient mobile account](test-evidence/physiohome/mobile-patient-account.png) · [Patient cancelled/past sessions](test-evidence/physiohome/mobile-patient-cancelled.png) · [Patient recovery progress](test-evidence/physiohome/mobile-patient-progress.png) · [Patient web overview](test-evidence/physiohome/web-patient-overview-current.png)
+* Date and slot availability
 
-### DATA-02: Therapist Upcoming list contains appointments dated in the past
+* Address selection
 
-**Priority:** P1 (High)  
-**Platform:** Android app / therapist  
-**Area:** Schedule and session management
+* Fee breakdown
 
-**Description:** On October 4, the therapist app's **Upcoming (23)** list showed appointments dated Friday, July 17, including CONFIRMED and IN PROGRESS sessions, with actions such as Mark complete and Reschedule. These dates were already in the past.
+* Payment selection up to the gateway step
 
-**Steps to reproduce:**
-1. Sign in as `therapist@test.com`.
-2. Open Requests > Upcoming.
-3. Inspect the first visible appointment dates and states.
+* Patient login
 
-**Expected:** Past appointments are classified as completed, canceled, or explicitly overdue, not Upcoming.
+* Patient Overview
 
-**Actual:** July 17 records were still in the upcoming queue on October 4.
+* Sessions
 
-**Evidence:** [Therapist upcoming sessions](test-evidence/physiohome/mobile-therapist-upcoming.png)
+* Reports
 
-### UX-01: Mobile booking rejects the saved city-only address with a generic error
+* Rewards
 
-**Priority:** P2 (Medium)  
-**Platform:** Android app / patient booking
+* Notifications
 
-**Description:** The account's primary address is stored as “Chitwan.” Booking continued to a summary, but attempting to submit it displayed “Add a little more detail — at least 10 characters.” The app does not identify which address detail is missing. The address editor/account says the current single address can be changed, while multiple addresses are “coming soon.”
+* Complaints
 
-**Steps to reproduce:**
-1. Sign in as patient and open Saved addresses to confirm the primary address.
-2. Select a therapist, date and time, then continue with the saved address.
-3. Attempt to continue from the booking summary.
+* Profile
 
-**Expected:** The field explains required address parts, identifies the error beside the address input, and provides a clear edit path.
+* Help
 
-**Actual:** Generic minimum-length message appears after carrying forward the saved short address.
+* Settings
 
-**Evidence:** [Saved patient address](test-evidence/physiohome/mobile-patient-addresses.png) · [Booking validation](test-evidence/physiohome/mobile-patient-booking-validation.png)
+* Therapist login
 
-### UX-02: Mobile booking summary splits “Tomorrow” across lines
+* Therapist Overview
 
-**Priority:** P2 (Medium)  
-**Platform:** Android app / patient booking
+* Therapist report form
 
-**Description:** The narrow date tile wraps “Tomorrow” as “Tomorro” and a lone “w,” making the appointment date look malformed.
+* Therapist account dashboard
 
-**Expected:** The date label remains intact or uses a compact format such as “Mon, Oct 5.”
+* Admin login
 
-**Evidence:** [Mobile booking summary](test-evidence/physiohome/mobile-patient-booking-summary.png)
+* Admin Overview
 
-### APP-01: Pain tracking, milestones, wallet linking, and patient file upload are incomplete
+* Therapists
 
-**Priority:** P2 (Medium; product scope confirmation needed)  
-**Platform:** Android app / patient account
+* Patients
 
-**Description:** Recovery Progress says milestones and pain tracking are “coming soon.” Payment methods says saved wallets are coming soon and that eSewa/Khalti are not connected for in-app payment. Reports & Files shows an “Upload my own report” action, but tapping it displays “Uploading your own files is not available yet.” These controls are discoverable but incomplete.
+* Bookings
 
-**Expected:** Features represented by visible actions are either implemented or clearly presented as unavailable before the user enters the workflow; roadmap placeholders should not look like active capabilities.
+* Service areas
 
-**Actual:** The app exposes entry points that resolve to “coming soon”/unavailable notices, limiting self-management and care tracking.
+* Schedules
 
-**Evidence:** [Patient reports](test-evidence/physiohome/mobile-patient-reports.png) · [Upload unavailable notice](test-evidence/physiohome/mobile-patient-upload-unavailable.png) · [Recovery progress](test-evidence/physiohome/mobile-patient-progress.png) · [Payment methods](test-evidence/physiohome/mobile-patient-payment-methods.png)
+* Leave
 
-### WEB-01: Nepali complaint form exposes an untranslated internal key
+* Payments
 
-**Priority:** P2 (Medium)  
-**Platform:** Website / patient localization
+* Refunds
 
-**Description:** In Nepali, suggested complaint priority renders as `ADMIN_DASHBOARD.NORMAL` rather than a localized value. Other navigation and supporting text also remain partly English.
+* Complaints
 
-**Steps to reproduce:** Sign in as patient, switch to Nepali, open Complaints, inspect suggested priority.
+* Verification
 
-**Expected:** All form labels, priorities, validation, and navigation use the selected language consistently.
+* Performance
 
-**Evidence:** [Priority key close-up](test-evidence/physiohome/untranslated-key-closeup.png) · [Complaint page context](test-evidence/physiohome/complaint-localization-context.png)
+* Safety incidents
 
-### WEB-02: Therapist image intermittently returns HTTP 404
+* Notifications
 
-**Priority:** P2 (Medium)  
-**Platform:** Public website / therapist discovery
+* Analytics
 
-**Description:** The responsive image request for Dr. Sushmita Rai returned 404 at the 640px optimized width in a prior pass, leaving the therapist card without a photograph. The image loaded through a different responsive request during another pass, so the failure appears variant-dependent or intermittent.
+* Admin team
 
-**Expected:** All responsive image variants load, or a deliberate fallback is shown.
+* Activity log
 
-**Evidence:** [Failed therapist image](test-evidence/physiohome/broken-therapist-image.png)
+* Appearance
 
-### WEB-03: App-store badges link to the current page anchor
+* Settings
 
-**Priority:** P2 (Medium)  
-**Platform:** Public website / Services footer
+## 2.2 Android App
 
-**Description:** Google Play and App Store badges both resolve to `#` on the current page rather than an app-store listing.
+The following areas were checked:
 
-**Expected:** Badges open the valid application listing or are hidden until store links are live.
+* App installation and launch on a physical Android 12 device
 
-**Actual:** Activating either badge only targets the current page anchor.
+* Patient login
 
-**Evidence:** [Public Services page](test-evidence/physiohome/web-public-services.png)
+* Patient home
 
-### WEB-04: Empty therapist report submission provides no visible field guidance
+* Therapist discovery
 
-**Priority:** P2 (Medium)  
-**Platform:** Website / therapist report upload
+* Sessions
 
-**Description:** Clicking Upload & notify patient with patient, note, type, and attachment unset leaves the dashboard form unchanged and provides no visible field-level feedback.
+* Notifications
 
-**Expected:** Required fields are clearly indicated, with an error message and focus on the first missing field.
+* Account
 
-**Actual:** No visible feedback appeared; no report was uploaded.
+* Profile
 
-**Evidence:** [Therapist empty report form](test-evidence/physiohome/web-therapist-empty-report-form.png)
+* Saved addresses
 
-## Confirmed Working
+* Reports
 
-- Patient, therapist, and admin demo logins succeeded on the website; patient and therapist logins succeeded in the Android app.
-- Public therapist city filtering and lowest-price sort worked. Searching Dr. Jane Smith eventually returned one matching card.
-- Website booking modal opened, allowed date advancement, showed available slots on Oct 10 for the tested therapist, and reached the payment screen. The test stopped before payment.
-- Web checkout showed a 5% platform fee and disabled Pay & confirm until a Nepal payment method/required eSewa number was selected. An invalid short number left the payment action disabled.
-- Mobile therapist schedule and therapist requests/account screens loaded; patient support showed email, phone, service hours, and a send-message action.
-- Mobile patient Sessions supported booking cancellation; the QA cash booking was canceled and Upcoming returned to zero.
-- Admin bookings page loaded 69 records and admin management pages rendered for the routes listed in Test Scope.
-- Mobile APK archive was readable (378 entries) and contained Flutter assets/native libraries for arm64-v8a, armeabi-v7a, and x86_64. No signature verification was performed in this pass.
+* Recovery progress
 
-## Mobile UI/UX Recommendations
+* Payment methods
 
-### Typography
+* Rewards
 
-Use Noto Sans for Latin and Noto Sans Devanagari for Nepali. Keep body copy around 16sp, support system font scaling, and avoid splitting words in fixed date tiles. Give labels readable contrast and reserve monospaced type for short metadata only.
+* FAQ
 
-### Color and status
+* Support
 
-Use deep teal `#0B5D57` as the primary action color and warm coral `#D96C4A` sparingly for secondary emphasis. Use white and cool mist `#F4F7F6` surfaces with charcoal `#24343A` text. Status must be communicated in text plus color; never infer paid/confirmed/canceled from color alone. In particular, make “cash due” visually and semantically distinct from “payment received.”
+* Therapist login
 
-### Layout and navigation
+* Therapist home
 
-Keep patient and therapist role workspaces distinct, with stable labeled bottom navigation. The patient home should prioritize next session, Book a session, care plan, and today's exercises. Therapist home should prioritize today's schedule and actionable requests. Use compact cards, predictable page titles, one clear primary action per screen, and touch targets of at least 44x44pt.
+* Schedule
 
-### Booking and care
+* Booking requests
 
-Use a clear sequence: therapist, date/time, visit type, complete address, transparent price breakdown, then confirmation. Keep date text on one line and show time zone. Validate address inline with specific requirements and allow multiple saved addresses. Show fees consistently with the configured rate. Treat cash-on-visit as unpaid until collection is recorded. Add cancellation terms before confirmation and maintain synchronized states between patient, therapist, and admin views.
+* Therapist account
 
-### Health information and trust
+* Patient booking
 
-Implement patient-owned report upload with file type/size guidance, clinician notes with safe access controls, recovery milestones, pain tracking, accessible exercise instructions, and reminders. Clearly label roadmap items as unavailable rather than presenting them as active controls. Keep complaint identity association correct and auditable, and show the patient exactly who can view sensitive reports and complaints.
+* Cash-on-visit booking
 
-## Test Data and Cleanup
+* Booking cancellation
 
-- One mobile QA booking was created for Dr. Anil Shakya for Oct 5 at 09:00, with a QA-only address and cash-on-visit selected; it was canceled through the patient app. No eSewa/Khalti payment occurred. The cancellation remains as an audit/history record.
-- One web QA complaint was submitted with unique QA-only text. Admin stored it under Nabin Khadka instead of the authenticated John Doe patient; evidence was captured, then the exact QA complaint was deleted. No other complaint was modified.
-- No report, medical file, unrelated booking, profile, schedule, fee setting, or account was changed.
+## 2.3 Not Tested
 
-## Evidence Index
+The following were not performed:
 
-- [Patient mobile home](test-evidence/physiohome/mobile-patient-home.png)
-- [Patient mobile discovery](test-evidence/physiohome/mobile-patient-discovery.png)
-- [Patient booking summary](test-evidence/physiohome/mobile-patient-booking-summary.png)
-- [Patient booking validation](test-evidence/physiohome/mobile-patient-booking-validation.png)
-- [QA booking confirmation](test-evidence/physiohome/mobile-qa-booking-confirmed.png)
-- [QA booking in Upcoming](test-evidence/physiohome/mobile-qa-booking-upcoming.png)
-- [False cash-payment notification](test-evidence/physiohome/mobile-qa-payment-notification.png)
-- [Patient notifications](test-evidence/physiohome/mobile-patient-notifications.png)
-- [Patient account and profile](test-evidence/physiohome/mobile-patient-account.png)
-- [Patient saved address](test-evidence/physiohome/mobile-patient-addresses.png)
-- [Patient reports](test-evidence/physiohome/mobile-patient-reports.png)
-- [Patient upload unavailable notice](test-evidence/physiohome/mobile-patient-upload-unavailable.png)
-- [Patient recovery progress](test-evidence/physiohome/mobile-patient-progress.png)
-- [Patient payment methods](test-evidence/physiohome/mobile-patient-payment-methods.png)
-- [Patient rewards](test-evidence/physiohome/mobile-patient-rewards.png)
-- [Patient support](test-evidence/physiohome/mobile-patient-support.png)
-- [Patient FAQ](test-evidence/physiohome/mobile-patient-faq.png)
-- [Therapist mobile home](test-evidence/physiohome/mobile-therapist-home.png)
-- [Therapist mobile schedule](test-evidence/physiohome/mobile-therapist-schedule.png)
-- [Therapist mobile upcoming records](test-evidence/physiohome/mobile-therapist-upcoming.png)
-- [Therapist mobile cancelled records](test-evidence/physiohome/mobile-therapist-cancelled.png)
-- [Therapist mobile account](test-evidence/physiohome/mobile-therapist-account.png)
-- [Patient web overview](test-evidence/physiohome/web-patient-overview-current.png)
-- [Therapist web overview](test-evidence/physiohome/web-therapist-overview-current.png)
-- [Admin web overview](test-evidence/physiohome/web-admin-overview-current.png)
-- [Admin dashboard after QA booking](test-evidence/physiohome/web-admin-post-qa-booking.png)
-- [Admin bookings (69 records)](test-evidence/physiohome/web-admin-bookings-empty.png)
-- [Admin therapist schedule](test-evidence/physiohome/web-admin-schedule-selected.png)
-- [Admin complaint queue](test-evidence/physiohome/web-admin-complaints-qa.png)
-- [Admin complaint detail](test-evidence/physiohome/web-admin-qa-complaint-detail.png)
-- [Web booking payment step](test-evidence/physiohome/web-booking-payment-step.png)
-- [Public Services page](test-evidence/physiohome/web-public-services.png)
-- [Therapist web empty report form](test-evidence/physiohome/web-therapist-empty-report-form.png)
-- [Untranslated localization key](test-evidence/physiohome/untranslated-key-closeup.png)
-- [Intermittently broken therapist image](test-evidence/physiohome/broken-therapist-image.png)
+* No eSewa or Khalti transaction
 
-## Submission Note
+* No real-money payment
 
-This report and its screenshots are local workspace files. ClickUp and Google Docs are not configured in this environment, so no public share link was created. To share externally, publish this Markdown and the linked evidence folder to an approved public/shared location; screenshots must be uploaded alongside the report so relative links continue to work.
+* No refund transaction
+
+* No therapist report or medical file upload
+
+* Mobile self-upload was checked only to confirm that the feature is currently unavailable
+
+* Admin mobile testing, since the APK only provides patient and therapist roles
+
+* Destructive account deletion
+
+* Admin settings changes
+
+* Availability changes
+
+* Patient/therapist profile edits
+
+* Unrelated test-data changes
+
+---
+
+# 3. Findings
+
+## FIN-01: Cash-on-visit booking is shown as paid
+
+**Priority:** P1 (High)
+
+**Platform:** Android app / Patient notifications / Admin finance
+
+**Area:** Booking and payment
+
+### Description
+
+I created a booking using **Cash on visit** and confirmed it.
+
+Immediately after the booking, the patient received a notification saying that the Rs 1,700 payment had been received. No cash had actually been collected.
+
+The booking was later canceled, but the payment notification was still present.
+
+The admin dashboard also showed Rs 1,700 in platform earnings after the QA booking, even though no payment had been collected and the appointment was canceled.
+
+### Steps to reproduce
+
+1. Log in to the mobile app using `patient@test.com`.
+
+2. Select a therapist.
+
+3. Select a future date and time.
+
+4. Enter a valid address.
+
+5. Select **Cash on visit**.
+
+6. Confirm the booking.
+
+7. Open Notifications.
+
+8. Check the admin Overview.
+
+9. Cancel the booking.
+
+10. Check the payment notification again.
+
+### Expected result
+
+A cash-on-visit booking should remain unpaid until the therapist confirms that the cash was actually received.
+
+Canceling the booking should not create a payment-received notification or add the amount to platform earnings.
+
+### Actual result
+
+The app immediately showed a payment-received notification for Rs 1,700.
+
+The admin earnings also increased even though no payment was collected.
+
+A cancellation notification was later generated as well.
+
+### Evidence
+
+* `mobile-qa-booking-confirmed.png`
+
+* `mobile-qa-payment-notification.png`
+
+* `web-admin-post-qa-booking.png`
+
+---
+
+## FIN-02: Platform fee is different in admin, web checkout, and mobile
+
+**Priority:** P1 (High)
+
+**Platform:** Website / Admin / Android app
+
+**Area:** Pricing and payment
+
+### Description
+
+The platform fee shown in the admin settings was **15%**.
+
+During web booking, the checkout showed a **5% fee**. For example, a Rs 1,300 session showed a Rs 65 platform fee and a total of Rs 1,365.
+
+On mobile, the booking showed the session amount as Rs 1,700 with **"No hidden charges"** and did not show a platform fee.
+
+So the same fee is represented differently in the three areas.
+
+### Steps to reproduce
+
+1. Log in as admin.
+
+2. Open Settings.
+
+3. Check the Platform fee value.
+
+4. Start a patient booking on the website.
+
+5. Continue to the Payment step.
+
+6. Check the fee and total.
+
+7. Repeat the booking flow from the mobile app.
+
+8. Compare the amounts.
+
+### Expected result
+
+The configured platform fee and final amount should be consistent across admin, web, and mobile.
+
+### Actual result
+
+* Admin: 15%
+
+* Web checkout: 5%
+
+* Mobile: No additional platform fee shown
+
+### Evidence
+
+* `mobile-patient-booking-summary.png`
+
+* `web-booking-payment-step.png`
+
+The admin setting showed 15% during testing and was not changed.
+
+---
+
+## SEC-01: Complaint is stored under the wrong patient
+
+**Priority:** P1 (High)
+
+**Platform:** Website
+
+**Area:** Complaints / Patient identity
+
+### Description
+
+I submitted a complaint while logged in as `patient@test.com`.
+
+The patient dashboard showed the account as **John Doe**.
+
+When the complaint was checked from the admin panel, the complaint appeared as being filed by **Nabin Khadka**.
+
+The complaint text was a unique QA-only message that had just been submitted from the John Doe account, so it was possible to confirm that this was the newly created complaint.
+
+### Steps to reproduce
+
+1. Log in to the website using `patient@test.com`.
+
+2. Open Complaints.
+
+3. Select Dr. Anil Shakya.
+
+4. Select the category **Other**.
+
+5. Enter a unique test description.
+
+6. Submit the complaint.
+
+7. Log in as admin.
+
+8. Open **Complaints > Filed by Patients**.
+
+9. Open the newly created complaint.
+
+10. Compare the patient shown in the complaint with the patient account used to submit it.
+
+### Expected result
+
+The complaint should be linked to the patient who submitted it.
+
+### Actual result
+
+The complaint submitted from the John Doe account was displayed under **Nabin Khadka**.
+
+This creates an incorrect patient identity in the admin complaint record.
+
+Whether the other patient could access this complaint was not tested.
+
+### Cleanup
+
+The QA complaint was deleted from the admin panel after the evidence was captured.
+
+### Evidence
+
+* `web-admin-complaints-qa.png`
+
+* `web-admin-qa-complaint-detail.png`
+
+---
+
+## DATA-01: Patient session and progress counts do not match
+
+**Priority:** P1 (High)
+
+**Platform:** Android app / Website
+
+**Area:** Sessions / Recovery progress
+
+### Description
+
+The patient information shown in different parts of the app did not match.
+
+The mobile Account screen showed **20 completed sessions**.
+
+The mobile Sessions screen showed:
+
+* Past: 20
+
+* Some rows in the Past section were still marked **CONFIRMED**
+
+The Recovery Progress screen showed:
+
+* 10/36 sessions
+
+* 9 upcoming
+
+However, the mobile Home and Sessions screens did not show any upcoming bookings.
+
+On the website, the patient Overview showed:
+
+* 37 total
+
+* 10 completed
+
+The Completed list also contained 10 records.
+
+Even after considering the additional QA booking that was created and canceled during testing, the numbers did not line up.
+
+### Steps to reproduce
+
+1. Log in as the same patient on mobile and web.
+
+2. Open Account.
+
+3. Open Sessions.
+
+4. Open Recovery Progress.
+
+5. Check the patient Overview on web.
+
+6. Compare completed and upcoming session counts.
+
+7. Check the status shown on past/canceled sessions.
+
+### Expected result
+
+Session totals and statuses should be based on the same booking data and should match across the different screens and platforms.
+
+### Actual result
+
+Different screens showed different numbers, including:
+
+* 0 upcoming vs 9 upcoming
+
+* 20 completed vs 10 completed
+
+Some past records were also still marked **CONFIRMED**.
+
+One canceled booking contained the address:
+
+`Kathmandu dhdhdnnd`
+
+### Evidence
+
+* `mobile-patient-account.png`
+
+* `mobile-patient-cancelled.png`
+
+* `mobile-patient-progress.png`
+
+* `web-patient-overview-current.png`
+
+---
+
+## DATA-02: Past appointments appear under Therapist Upcoming
+
+**Priority:** P1 (High)
+
+**Platform:** Android app / Therapist
+
+**Area:** Schedule / Requests
+
+### Description
+
+The test was performed on October 4.
+
+The therapist's **Upcoming (23)** list contained appointments dated **Friday, July 17**.
+
+Some of these appointments were marked CONFIRMED or IN PROGRESS and still had actions such as Mark complete and Reschedule.
+
+These appointments were already in the past.
+
+### Steps to reproduce
+
+1. Log in to the mobile app using `therapist@test.com`.
+
+2. Open Requests.
+
+3. Open Upcoming.
+
+4. Check the dates of the listed appointments.
+
+### Expected result
+
+Appointments from the past should not appear under Upcoming.
+
+They should be completed, canceled, or otherwise marked as overdue depending on their state.
+
+### Actual result
+
+July 17 appointments were still shown in Upcoming on October 4.
+
+### Evidence
+
+* `mobile-therapist-upcoming.png`
+
+---
+
+## UX-01: Saved city-only address is rejected with a generic message
+
+**Priority:** P2 (Medium)
+
+**Platform:** Android app / Patient booking
+
+**Area:** Address validation
+
+### Description
+
+The patient's saved primary address was simply:
+
+`Chitwan`
+
+The address could be selected during booking and the flow continued to the booking summary.
+
+When the booking was submitted, the app displayed:
+
+**"Add a little more detail — at least 10 characters."**
+
+The message does not explain what address information is missing.
+
+### Steps to reproduce
+
+1. Log in as patient.
+
+2. Open Saved addresses.
+
+3. Confirm the saved primary address.
+
+4. Select a therapist.
+
+5. Select a date and time.
+
+6. Continue with the saved address.
+
+7. Try to continue from the booking summary.
+
+### Expected result
+
+The app should explain what information is required and show the validation message near the address field.
+
+There should also be a clear way to edit the address.
+
+### Actual result
+
+A generic minimum-length error was displayed after the saved address was already accepted earlier in the flow.
+
+### Evidence
+
+* `mobile-patient-addresses.png`
+
+* `mobile-patient-booking-validation.png`
+
+---
+
+## UX-02: "Tomorrow" is broken into two lines
+
+**Priority:** P2 (Medium)
+
+**Platform:** Android app / Patient booking
+
+**Area:** Booking UI
+
+### Description
+
+On the mobile booking summary, the date tile was too narrow for the word **Tomorrow**.
+
+It appeared as:
+
+`Tomorro`
+
+`w`
+
+This makes the date information look broken.
+
+### Expected result
+
+The date should remain readable on one line or use a shorter format such as:
+
+`Mon, Oct 5`
+
+### Evidence
+
+* `mobile-patient-booking-summary.png`
+
+---
+
+## APP-01: Several patient features are not available yet
+
+**Priority:** P2 (Medium; product scope needs confirmation)
+
+**Platform:** Android app / Patient account
+
+### Description
+
+Several options are visible in the patient app but are not currently available.
+
+Recovery Progress shows that milestones and pain tracking are coming soon.
+
+Payment Methods says saved wallets are coming soon and that eSewa/Khalti are not connected for in-app payment.
+
+Reports & Files contains an **Upload my own report** option, but selecting it displays:
+
+**"Uploading your own files is not available yet."**
+
+### Expected result
+
+Features that are not ready should either be clearly marked as unavailable before entering the flow or should not be presented as active features.
+
+### Actual result
+
+The user can access these options, but they lead to "coming soon" or unavailable messages.
+
+### Evidence
+
+* `mobile-patient-reports.png`
+
+* `mobile-patient-upload-unavailable.png`
+
+* `mobile-patient-progress.png`
+
+* `mobile-patient-payment-methods.png`
+
+---
+
+## WEB-01: Internal translation key is displayed in Nepali
+
+**Priority:** P2 (Medium)
+
+**Platform:** Website / Patient
+
+**Area:** Localization
+
+### Description
+
+When the website was switched to Nepali, the suggested complaint priority displayed:
+
+`ADMIN_DASHBOARD.NORMAL`
+
+instead of a translated value.
+
+Some other parts of the page also remained in English.
+
+### Steps to reproduce
+
+1. Log in as a patient.
+
+2. Change the website language to Nepali.
+
+3. Open Complaints.
+
+4. Check the suggested priority.
+
+### Expected result
+
+The priority and other visible text should be translated according to the selected language.
+
+### Actual result
+
+An internal translation key was visible to the user.
+
+### Evidence
+
+* `untranslated-key-closeup.png`
+
+* `complaint-localization-context.png`
+
+---
+
+## WEB-02: Therapist image sometimes returns 404
+
+**Priority:** P2 (Medium)
+
+**Platform:** Public website
+
+**Area:** Therapist discovery
+
+### Description
+
+The image for Dr. Sushmita Rai returned a **404** for one responsive image request at the 640px width during an earlier pass.
+
+The image loaded successfully through a different responsive request during another pass.
+
+This looks like the issue may depend on the requested image size or image variant.
+
+### Expected result
+
+All responsive image versions should load correctly.
+
+If an image cannot be loaded, a fallback image should be displayed.
+
+### Evidence
+
+* `broken-therapist-image.png`
+
+---
+
+## WEB-03: App Store buttons do not open the app stores
+
+**Priority:** P2 (Medium)
+
+**Platform:** Public website
+
+**Area:** Services footer
+
+### Description
+
+The Google Play and App Store buttons were tested from the public Services page.
+
+Both buttons point to `#` instead of an actual store listing.
+
+### Expected result
+
+The buttons should open the relevant Google Play or App Store listing.
+
+If the apps are not published yet, the buttons should not appear as active links.
+
+### Actual result
+
+Clicking either button only moved to the current page anchor.
+
+### Evidence
+
+* `web-public-services.png`
+
+---
+
+## WEB-04: Therapist report form gives no validation message
+
+**Priority:** P2 (Medium)
+
+**Platform:** Website / Therapist
+
+**Area:** Report upload
+
+### Description
+
+The therapist report form was submitted without selecting a patient, adding a note, selecting a report type, or attaching a file.
+
+After clicking **Upload & notify patient**, nothing visibly changed.
+
+There was no message telling the therapist which fields were required.
+
+### Expected result
+
+The form should show validation messages for required fields and ideally focus the first missing field.
+
+### Actual result
+
+No visible validation message appeared and no report was uploaded.
+
+### Evidence
+
+* `web-therapist-empty-report-form.png`
+
+---
+
+# 4. Areas That Worked
+
+The following flows worked during testing:
+
+* Patient, therapist, and admin demo logins worked on the website.
+
+* Patient and therapist logins worked on the Android app.
+
+* Therapist city filtering worked.
+
+* Lowest-price sorting worked.
+
+* Searching for Dr. Jane Smith eventually returned one matching therapist.
+
+* The website booking modal opened correctly.
+
+* Date navigation worked.
+
+* Available slots were displayed for October 10 for the tested therapist.
+
+* The booking flow reached the payment screen.
+
+* Web checkout showed a 5% platform fee.
+
+* Pay & confirm remained disabled until the required Nepal payment information was selected.
+
+* An invalid short payment number kept the payment action disabled.
+
+* Mobile therapist schedule and Requests screens loaded.
+
+* Therapist account screen loaded.
+
+* Patient support displayed email, phone, service hours, and a send-message option.
+
+* Mobile patient Sessions allowed the test booking to be canceled.
+
+* After cancellation, Upcoming returned to zero.
+
+* Admin Bookings loaded 69 records.
+
+* The main admin management pages loaded successfully.
+
+* The mobile APK archive was readable and contained Flutter assets/native libraries for arm64-v8a, armeabi-v7a, and x86_64.
+
+* APK signature verification was not performed.
+
+---
+
+# 5. Mobile UI/UX Recommendations
+
+## Typography
+
+Use a font that works well for both English and Nepali, such as Noto Sans and Noto Sans Devanagari.
+
+Body text should remain readable at normal Android font sizes and should continue to work when system font scaling is increased.
+
+Avoid fixed-width date tiles that can split words.
+
+## Colors and status
+
+Payment and booking states should not rely only on color.
+
+For example, **Cash due** and **Payment received** should be clearly different both visually and through text.
+
+The current UI recommendations are:
+
+* Primary action: deep teal `#0B5D57`
+
+* Secondary emphasis: warm coral `#D96C4A`
+
+* Surface: `#F4F7F6`
+
+* Text: `#24343A`
+
+## Layout and navigation
+
+Patient and therapist areas should remain clearly separated.
+
+The patient home screen should give priority to:
+
+* Next session
+
+* Book a session
+
+* Care plan
+
+* Today's exercises
+
+The therapist home screen should prioritize:
+
+* Today's schedule
+
+* Booking requests
+
+Keep one main action per screen where possible and use touch targets of at least 44x44pt.
+
+## Booking and care
+
+A simple booking flow would be:
+
+1. Select therapist
+
+2. Select date/time
+
+3. Select visit type
+
+4. Enter/confirm address
+
+5. Review price
+
+6. Confirm booking
+
+The address should be validated before reaching the final confirmation screen.
+
+Fees should be calculated consistently across web and mobile.
+
+For cash-on-visit, the booking should remain unpaid until the cash has actually been collected.
+
+Patient, therapist, and admin booking statuses should also stay synchronized.
+
+## Health information and trust
+
+Patient reports and other health information should have clear access controls.
+
+When file upload becomes available, the app should provide supported file types and size limits.
+
+Recovery milestones and pain tracking should be clearly marked as unavailable if they are still under development.
+
+Complaint records should always remain linked to the correct patient.
+
+---
+
+# 6. Test Data and Cleanup
+
+The following test data was created during this QA pass:
+
+### Mobile booking
+
+One QA booking was created for:
+
+* Therapist: Dr. Anil Shakya
+
+* Date: October 5
+
+* Time: 09:00
+
+* Payment: Cash on visit
+
+* Address: QA-only address
+
+The booking was later canceled through the patient app.
+
+No eSewa or Khalti payment was made.
+
+The cancellation remains in the booking history as an audit record.
+
+### Complaint
+
+One complaint was submitted using unique QA-only text.
+
+The complaint was submitted while logged in as John Doe but appeared in the admin panel under Nabin Khadka.
+
+The evidence was captured and the QA complaint was then deleted.
+
+No other complaints were changed.
+
+### Other data
+
+No report, medical file, unrelated booking, profile, schedule, fee setting, or account was modified.
+
+---
+
+# 7. Evidence Index
+
+* `mobile-patient-home.png`
+
+* `mobile-patient-discovery.png`
+
+* `mobile-patient-booking-summary.png`
+
+* `mobile-patient-booking-validation.png`
+
+* `mobile-qa-booking-confirmed.png`
+
+* `mobile-qa-booking-upcoming.png`
+
+* `mobile-qa-payment-notification.png`
+
+* `mobile-patient-notifications.png`
+
+* `mobile-patient-account.png`
+
+* `mobile-patient-addresses.png`
+
+* `mobile-patient-reports.png`
+
+* `mobile-patient-upload-unavailable.png`
+
+* `mobile-patient-progress.png`
+
+* `mobile-patient-payment-methods.png`
+
+* `mobile-patient-rewards.png`
+
+* `mobile-patient-support.png`
+
+* `mobile-patient-faq.png`
+
+* `mobile-therapist-home.png`
+
+* `mobile-therapist-schedule.png`
+
+* `mobile-therapist-upcoming.png`
+
+* `mobile-therapist-cancelled.png`
+
+* `mobile-therapist-account.png`
+
+* `web-patient-overview-current.png`
+
+* `web-therapist-overview-current.png`
+
+* `web-admin-overview-current.png`
+
+* `web-admin-post-qa-booking.png`
+
+* `web-admin-bookings-empty.png`
+
+* `web-admin-schedule-selected.png`
+
+* `web-admin-complaints-qa.png`
+
+* `web-admin-qa-complaint-detail.png`
+
+* `web-booking-payment-step.png`
+
+* `web-public-services.png`
+
+* `web-therapist-empty-report-form.png`
+
+* `untranslated-key-closeup.png`
+
+* `complaint-localization-context.png`
+
+* `broken-therapist-image.png`
